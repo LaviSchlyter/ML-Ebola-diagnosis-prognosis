@@ -112,9 +112,9 @@ def make_indicators(data_frame, list_of_column_target, list_of_target_values, in
 
 from sklearn.impute import SimpleImputer
 
-def handle_missing_values(X):
+def handle_missing_values(X, target_values):
     """Using KNN algorithm to predict missing values"""
-    imputer = SimpleImputer()
+    imputer = SimpleImputer(missing_values= target_values)
     mod = imputer.fit(X)
     X_trans = pd.DataFrame(mod.transform(X))
     X_trans.columns = X.columns
