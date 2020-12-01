@@ -143,7 +143,8 @@ def Log_reg(X,y):
     
     
     
-def backward_elimation(X, y, model):
+
+def backward_elimation(X, y, model_str):
     """Backward Elimination for chosen model, call with backward_elimation(X, y, "least-squares"), selects features """
     cols = list(X.columns)
     pmax = 1
@@ -151,12 +152,12 @@ def backward_elimation(X, y, model):
         p= []
         X_1 = X[cols]
         #X_1 = sm.add_constant(X_1) We already added a constant for the model 
-        if model == "least-squares":
+        if model_str == "least-squares":
             model = sm.OLS(y,X_1).fit()
-        elif model == "logistic regression":
+        elif model_str == "logistic regression":
             model = sm.Logit(y,X_1).fit()
         else: raise NameError('Backward elimination not implemented for this model')
-        p = pd.Series(model.pvalues.values[1:],index = cols)      
+        p = pd.Series(model.pvalues.values,index = cols)    #[1:]  
         pmax = max(p)
         feature_with_p_max = p.idxmax()
         if(pmax>0.05):
@@ -165,7 +166,6 @@ def backward_elimation(X, y, model):
             break
     selected_features_BE = cols
     print(selected_features_BE)
-    
     
     
 def Lasso(X,y):
