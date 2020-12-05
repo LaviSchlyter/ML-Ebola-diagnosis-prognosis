@@ -35,15 +35,12 @@ def delete_minus1(X):
     and then remove all rows with missing values
     """
     Xp = X.copy()
-    k =0;
-
     for column in Xp:
 
         if sum(Xp[column]==-1) >= 0.5 * len(Xp[column]):
             Xp.drop(column, axis=1, inplace = True)
             continue
 
-        
         index_names = Xp[(Xp[column] == -1)].index;
         Xp.drop(index_names, inplace = True)
     
@@ -224,16 +221,17 @@ def rank_visits_rigorous(data_frame):
     
 
 
+
 ########################################### DATA - VISUALIZATION ##############################################################
 
 
 
 def Corr_vision(X):
     """ Correlation visualization according to Pearson 
-    
+    <
     """
 
-    fig, ax = plt.subplots(figsize=(20,10))
+    fig, ax = plt.subplots(figsize=(20,20))
     visualizer = Rank2D(algorithm="pearson")
     visualizer.fit_transform(X)
     visualizer.show('corr_matrix')
@@ -254,7 +252,7 @@ def Rad_vision(X,y):
     """
 
     fig, ax = plt.subplots(figsize=(20,10))
-    radviz(X, y, classes = ['Ebola negative', 'Ebola positive'])
+    radviz(X, y.values, classes = ['Ebola negative', 'Ebola positive'])
     plt.show()
 
 
@@ -263,9 +261,6 @@ def Rad_vision(X,y):
 
 def Log_reg(X,y):
     """ Logistic regression, using the p_values to find important features 
-    
-    A strange thing is Ridha used lgistic regression to find how many features we should keep and then used linear regression with the number of features to 
-    find which ones ... ? 
     
     """
     
@@ -277,13 +272,13 @@ def Log_reg(X,y):
     nof=0           
     score_list =[]
     for n in range(len(nof_list)):
-        X_train, X_test, y_train, y_test = train_test_split(X,y, test_size = 0.3, random_state = 123)
+        X_train, X_test, y_train, y_test = train_test_split(X,y, test_size = 0.2, random_state = 123)
         model = LogisticRegression(max_iter=100)
         rfe = RFE(model,n_features_to_select=nof_list[n])
         X_train_rfe = rfe.fit_transform(X_train,y_train)
         X_test_rfe = rfe.transform(X_test)
         model.fit(X_train_rfe,y_train)
-        score = model.score(X_test_rfe,y_test)
+        score = model.roc_auc_score(X_test_rfe,y_test) # AUC
         score_list.append(score)
         if(score>highest_score):
             highest_score = score
@@ -294,9 +289,9 @@ def Log_reg(X,y):
     print(cols[rfe.support_])
     
 
-    print("Feature importance for linear regression")
-    
-    model = LinearRegression()
+    print("Feature importance for LogisticRegression")
+
+    model = LogisticRegression()
 
     #Initializing RFE model
     rfe = RFE(model, n_features_to_select=nof)   
@@ -313,7 +308,7 @@ def Log_reg(X,y):
     
     
 
-def backward_elimation(X, y, model_str):
+def backward_elimation(X_train, y_train, model_str):
     """Backward Elimination for chosen model, call with backward_elimation(X, y, "least-squares"), selects features """
     cols = list(X.columns)
     pmax = 1
@@ -336,10 +331,9 @@ def backward_elimation(X, y, model_str):
     selected_features_BE = cols
     print(selected_features_BE)
     
-    
-def Lasso(X,y):
+############ Not sure  if X is train or not .... (please check Ridha previousstudy file on git, I don't have it anymore)   
+def Lasso(X,y): 
     """ Importance of features according to Lasso method 
-    
     """
     reg = LassoCV()
     reg.fit(X, y)
@@ -350,19 +344,83 @@ def Lasso(X,y):
     print("Lasso picked " + str(sum(coef != 0)) + " variables and eliminated the other " +  str(sum(coef == 0)) + " variables")
    
     imp_coef = coef.sort_values()
-    #import matplotlib
-    #matplotlib.rcParams['figure.figsize'] = (8.0, 10.0)
     plt.rcParams['figure.figsize'] = (8.0, 10.0)
     imp_coef.plot(kind = "barh")
     plt.title("Feature importance using Lasso Model")
     plt.show()
 
 
+def score_model(X_train, y_train, X_test, y_test, model,  **kwargs):
+    """
+    Test various models.
+    """
+    
+    # Train the model
+    model.fit(X_train, y_train, **kwargs)
+    
+    # Predict on the train set
+    prediction_train = model.predict(X_train)
+    
+    # Compute metrics for the train set
+    accuracy_train = accuracy_score(y_train, prediction_train)
+    
+    #False Positive Rate, True Positive Rate, Threshold
+    fpr_train, tpr_train, thresholds_train = roc_curve(y_train, prediction_train)
+    auc_train = auc(fpr_train, tpr_train)
+    
+    f1_score_train = f1_score(y_train, prediction_train)
+
+    # Predict on the test set
+    prediction_test = model.predict(X_test)
+    
+    accuracy_test = accuracy_score(y_test, prediction_test)
+
+    fpr_test, tpr_test, thresholds_test = roc_curve(y_test, prediction_test)
+    auc_test = auc(fpr_test, tpr_test)
+    
+    f1_score_test = f1_score(y_test, prediction_test)
+    
+    print("{}:".format(model.__class__.__name__))
+    # Compute and return F1 (harmonic mean of precision and recall)
+    print("On training we get an Accuracy {}, an AUC {} and F1 score {} ".format(accuracy_train, auc_train, f1_score_train ) )
+    
+    print("For test we get an Accuracy {}, an AUC {} and F1 score {}".format(accuracy_test, auc_test, f1_score_test) )
+    
+    fig, axes = plt.subplots(3, 2, figsize = (20,20))
+
+    visualgrid = [
+    ConfusionMatrix(model, ax=axes[0][0], classes=['Ebola Negative', 'Ebola Positive'], cmap="YlGnBu"),
+    ClassificationReport(model, ax=axes[0][1], classes=['Ebola Negative', 'Ebola Positive'],cmap="YlGn",),
+    PrecisionRecallCurve(model, ax=axes[1][0]),
+    ClassPredictionError(model, classes=['Ebola Negative', 'Ebola Positive'], ax=axes[1][1]),
+    ]
+
+    for viz in visualgrid:
+        viz.fit(X_train, y_train)
+        viz.score(X_test, y_test)
+        viz.finalize()
+    
+    try:
+        roc_auc(model, X_train, y_train, X_test=X_test, y_test=y_test, classes=['Ebola Negative', 'Ebola Positive'], ax=axes[2][0])
+    except:
+        print('Can plot ROC curve for this model')
+    
+    try:
+        viz = FeatureImportances(model,ax=axes[2][1], stack=True, relative=False)
+        viz.fit(X_train, y_train)
+        viz.score(X_test, y_test)
+        viz.finalize()
+    except:
+        print('Don\'t have feature importance')
+        
+    plt.show()
+    print('\n')
 ######################################################### MODELS ######################################################################################
 
 def PCA_(k, X, y):
 
-    pca = PCA(n_components = k)
+    
+    pca = PCA(n_components = k, scale = True)
     X_new = pca.fit_transform(X)
     y_new = y.copy()
     
@@ -371,8 +429,8 @@ def PCA_(k, X, y):
     xs = X_new[:,0]
     ys = X_new[:,1]
     n = coeff.shape[0]
-    cdict = {'0': 'gray', '1': 'black'}
-    ldict = {'0': 'Not a case', '1': 'Confirmed'}
+    cdict = {0.0: 'gray', 1: 'black'}
+    ldict = {0.0: 'Not a case', 1: 'Confirmed'}
     fig, ax = plt.subplots()
     for g in np.unique(y_new):
         ix = np.where(y_new == g)
@@ -384,8 +442,7 @@ def PCA_(k, X, y):
             plt.text(coeff[i,0]* 3, coeff[i,1] * 3, str(X.columns[i]), color = 'red', ha = 'center', va = 'center', fontsize=12, weight='bold')
     
     ax.legend()
-    plt.xlim(-2,2)
-    plt.ylim(-2,2)
+
     plt.xlabel("PC{}".format(1))
     plt.ylabel("PC{}".format(2))
     plt.grid()
@@ -406,14 +463,17 @@ def PCA_vision_3D(X,y):
 
 
 
+"""
 
 
-def Decision_trees(X,y,max_depth, split = 0.3):
-    X_train, X_test, y_train, y_test = train_test_split(X,y, test_size = split, random_state = 123)
-    clfq = tree.DecisionTreeClassifier(max_depth=max_depth)
+DONT USE THESE !!!! TOO MUCH OF A BLACK BOX, and this one is wrong sine we don't update the parameters, recall to do a cross validation with a range estimated by the visualizer (ridha notebook) and the update the parameters found
+"""
+
+def Decision_trees(X_train,y_train,max_depth,min_samples_split):
+    clfq = tree.DecisionTreeClassifier(max_depth=max_depth, min_samples_split = min_samples_split)
     clfq = clfq.fit(X_train, y_train)
 
-    y_pred = clfq.predict(X_test)
+    y_pred = clfq.predict_proba(X_test)
     dot_data_1q = tree.export_graphviz(clfq, 
                                 out_file=None, 
                                 feature_names=X.columns,
@@ -431,16 +491,20 @@ def Decision_trees(X,y,max_depth, split = 0.3):
 
     
 
-
     
-def Random_forest(X,y,n_est, index_tree,max_depth,sample_split, split = 0.3):
+"""
+
+
+DONT USE THESE !!!! TOO MUCH OF A BLACK BOX, and this one is wrong sine we don't update the parameters, recall to do a cross validation with a range estimated by the visualizer (ridha notebook) and the update the parameters found
+"""
+    
+def Random_forest(X_train,y_train,n_est, index_tree,max_depth,sample_split):
     """Perform random forest.
 
     Parameters
     ----------
-    X: matrix
-        features
-    y: label
+    X_train: matrix of features (training set)
+    y_train: Labels (training set)
     
     n_est: number of estimators (aka number of trees)
     
@@ -455,10 +519,10 @@ def Random_forest(X,y,n_est, index_tree,max_depth,sample_split, split = 0.3):
     - 
     
     """
-    X_train, X_test, y_train, y_test = train_test_split(X,y, test_size = split, random_state = 123)
+
     clf = RandomForestClassifier(n_estimators=n_est, max_depth=max_depth, min_samples_split = sample_split, random_state = 123)
     clf = clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
+    y_pred = clf.predict_proba(X_test)
 
     print(clf.estimators_[index_tree])
     
@@ -481,17 +545,17 @@ def Random_forest(X,y,n_est, index_tree,max_depth,sample_split, split = 0.3):
 
     
 def accuracy_all(y_test, y_pred):
-    print("Accuracy: ", accuracy_score(y_test, y_pred))
-    print("Macro F1 score: ",f1_score(y_test, y_pred, average='macro'))
-    print("Micro F1 score: ",f1_score(y_test, y_pred, average='micro'))
-    #print("Accuracy under curve: ", roc_auc_score(y_test, y_pred))
-    
-def elbow_plot(X):
+    #print("Accuracy: ", accuracy_score(y_test, y_pred))
+    print("Macro F1 score(test): ",f1_score(y_test, y_pred, average='macro'))
+    print("Micro F1 score(test): ",f1_score(y_test, y_pred, average='micro'))
+    print("Accuracy under curve(test): ", roc_auc_score(y_test, y_pred))
+    # 
+def elbow_plot(X_train):
 
     Sum_of_squared_distances = []
     K = range(1,15)
     for k in K:
-        KMeans_clf = KMeans(n_clusters=k).fit(X)
+        KMeans_clf = KMeans(n_clusters=k).fit(X_train)
         Sum_of_squared_distances.append(KMeans_clf.inertia_)
     
     plt.plot(K, Sum_of_squared_distances, 'bx-')
@@ -502,9 +566,13 @@ def elbow_plot(X):
     
 
     
+"""
 
 
-def SVM_(X,y, param_grid = {'C': [0.1,1], 'gamma': [1,0.1],'kernel': ['sigmoid', 'poly']}):
+DONT USE THESE !!!! TOO MUCH OF A BLACK BOX, and this one is wrong sine we don't update the parameters (please use Ridha as reference)
+"""
+
+def SVM_(X_train,y_train, param_grid = {'C': [0.1,1], 'gamma': [1,0.1],'kernel': ['sigmoid', 'poly']}):
     """
     SVM model
     
@@ -512,18 +580,18 @@ def SVM_(X,y, param_grid = {'C': [0.1,1], 'gamma': [1,0.1],'kernel': ['sigmoid',
     
     
     """
-    
 
-
-    X_train, X_test, y_train, y_test = train_test_split(X,y, test_size = 0.3, random_state = 123)
 
     #param_grid = {'C': [0.1,1, 10, 100], 'gamma': [1,0.1,0.01,0.001],'kernel': ['rbf', 'poly', 'sigmoid']} (TOO MUCH TIME)
-     
-
     grid = GridSearchCV(svm.SVC(),param_grid,refit=True,verbose=1)
     grid.fit(X_train,y_train)
 
     print(grid.best_estimator_)
 
-    grid_pred = grid.predict(X_test)
-    accuracy_all(grid_pred, y_test)
+    grid_pred = grid.predict_proba(X_test)
+    accuracy_all(y_test,grid_pred)
+
+    
+
+    
+    
