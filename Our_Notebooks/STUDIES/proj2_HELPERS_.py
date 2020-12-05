@@ -121,8 +121,107 @@ def handle_missing_values(X, target_values):
     return X_trans
 
 
+# To transform the format MM/DD/YYYY or M/DD/YYYY or MM.DD.YYYY into a single integer
+def date_transformer(date_in_str):
+    day  = ''
+    month= ''
+    year = ''
+    separator = 0
+    for i in date_in_str:
+        if i =='.' or i=='/':
+            separator +=1
+        else:
+            if separator == 0:
+                month += i
+            elif separator == 1:
+                day   += i
+            elif separator ==2:
+                year  += i
+    return int(day)*10 + int(month)*1000 + int(year)*100000
+
+
+#  Reformats the date in the desired column using date_transformer
+def transform_datclin(data_frame, target_column_name='datclin', inplace=False):
+    df = data_frame
+    if not inplace:
+        df = data_frame.copy()
+    for i, date in enumerate(df[target_column_name]):
+        nb_date = date_transformer(date)
+        df.loc[i,target_column_name] = nb_date
+    if not inplace:
+        return df
+
+
+# to extract just one subset of data:
+def extract_certain_dataset(data_frame, name_of_target_column, target_value):
+    df = data_frame[data_frame[name_of_target_column] == target_value].copy()
+    return df
+
+
+# to separate the dataframe in subgroups depending on the values in the target column.
+def make_list_by_value(data_frame, name_of_target_column, name_of_reference_column):
+    list_of_df = []
+    list_of_target_values = data_frame[name_of_target_column].value_counts().index
+    for i, value in enumerate(list_of_target_values):
+        list_of_df.append(extract_certain_dataset(data_frame, name_of_target_column, value).set_index(name_of_reference_column))
+    return list_of_df
+
+
+# first separates the original dataset into subgroups corresponding to values on the target column,
+# and then puts them back toghether, but horizontally intead of vertically. Aloigned around the reference column.
+def rearange_horizontally(data_frame, name_of_target_column, name_of_reference_column):
+    list_of_df = make_list_by_value(data_frame, name_of_target_column, name_of_reference_column)
+    return pd.concat(list_of_df, axis=1, sort=False).reset_index()
     
 
+# ouputs a list of sub-dataframes. One for each different value in the targeted column 
+# (slightly different from make_list_by_value because of context of use)
+def dissassemble(data_frame, name_of_column_target):
+    out_list=[]
+    for i, value in enumerate(data_frame[name_of_column_target].value_counts(sort=False).index):
+        df = data_frame[data_frame[name_of_column_target] == value].copy()
+        out_list.append(df)
+    return out_list
+
+
+# outputs a list of lists of sub-dataframes. (calls dissassemble twice)
+def fine_dissassembly(data_frame, name_first_column_target, name_second_column_target):
+    out_list = dissassemble(data_frame, name_first_column_target)
+    for i, subdf in enumerate(out_list):
+        out_list[i] = dissassemble(subdf, name_second_column_target)
+    return out_list
+
+
+# Undoes dissassemble
+def reassemble(list_of_df):
+    return pd.concat(list_of_df)
+
+
+# Undoes fine_dissassembly
+def big_reassembly(list_of_list_of_df):
+    for i, sublist in enumerate(list_of_list_of_df):
+        list_of_list_of_df[i] = reassemble(sublist)
+    return reassemble(list_of_list_of_df)
+
+
+# only works for this specific dataset so many parameters are hard-coded
+# will find how many visits each patient did and assign a chronological order to them under a new column 'rank'
+def rank_visits_rigorous(data_frame):
+    df_clinic_d = transform_datclin(data_frame, 'datclin')      # correct the dates to better suit ranking
+    list_of_df = dissassemble(df_clinic_d, 'msfid')             # make subgroups for each patient
+    for i, sub_df in enumerate(list_of_df):
+        # for each patient, each day of visit, rank the hours of visit of that day
+        sub_df['rank_on_day'] = sub_df.groupby('datclin')['timclin'].rank('dense', ascending=True)
+    
+    df_clinic_m = reassemble(list_of_df)                        # reassemble the dataset
+    # combine ranking on day with general date to have exact order of visit
+    df_clinic_m['datclin'] = df_clinic_m['datclin'] + df_clinic_m['rank_on_day'] 
+    df_clinic_m.drop(columns=['rank_on_day'], inplace=True)
+    # find that order
+    df_clinic_m['rank']= df_clinic_m.groupby('msfid')['datclin'].rank('dense', ascending=True)
+    
+    return df_clinic_m
+    
 
 
 ########################################### DATA - VISUALIZATION ##############################################################
