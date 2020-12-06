@@ -1,27 +1,38 @@
 # -*- coding: utf-8 -*-
 """Some helper functions for project 2."""
+###### Basics
+
 import csv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
-from yellowbrick.features import PCA as PCA_3D
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import f1_score
-from sklearn.metrics import accuracy_score
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.tree import export_graphviz
-from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import GridSearchCV
-from sklearn.cluster import KMeans
-from sklearn import tree
 import graphviz
 import statsmodels.api as sm
-from sklearn import svm
-from sklearn.feature_selection import RFE
+
+##### Sklearn
+## metrics
+
+from sklearn.metrics import f1_score,accuracy_score,precision_recall_curve,plot_precision_recall_curve,roc_auc_score,roc_curve, auc
+## models
+
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import LassoCV
+from sklearn.decomposition import PCA
+from sklearn import svm
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import export_graphviz
+from sklearn.model_selection import GridSearchCV
+from sklearn.cluster import KMeans
+from sklearn import tree
+from sklearn.feature_selection import RFE
+
+#### yellowbrick
+
+from yellowbrick.classifier.rocauc import roc_auc
+from yellowbrick.classifier import ConfusionMatrix, ClassificationReport, ClassPredictionError, ROCAUC,PrecisionRecallCurve
+from yellowbrick.features import PCA as PCA_3D
 from yellowbrick.features import Rank2D
 from yellowbrick.target import ClassBalance
 from yellowbrick.features.radviz import radviz
@@ -420,7 +431,7 @@ def score_model(X_train, y_train, X_test, y_test, model,  **kwargs):
 def PCA_(k, X, y):
 
     
-    pca = PCA(n_components = k, scale = True)
+    pca = PCA(n_components = k)
     X_new = pca.fit_transform(X)
     y_new = y.copy()
     
