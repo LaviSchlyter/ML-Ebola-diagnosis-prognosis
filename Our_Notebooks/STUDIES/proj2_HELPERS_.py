@@ -360,10 +360,11 @@ def Lasso(X,y):
     plt.title("Feature importance using Lasso Model")
     plt.show()
 
+    
 
 def score_model(X_train, y_train, X_test, y_test, model,  **kwargs):
     """
-    Test various models.
+    Test various models. For ebola prediction
     """
     
     # Train the model
@@ -413,6 +414,78 @@ def score_model(X_train, y_train, X_test, y_test, model,  **kwargs):
     
     try:
         roc_auc(model, X_train, y_train, X_test=X_test, y_test=y_test, classes=['Ebola Negative', 'Ebola Positive'], ax=axes[2][0])
+    except:
+        print('Can plot ROC curve for this model')
+    
+    try:
+        viz = FeatureImportances(model,ax=axes[2][1], stack=True, relative=False)
+        viz.fit(X_train, y_train)
+        viz.score(X_test, y_test)
+        viz.finalize()
+    except:
+        print('Don\'t have feature importance')
+        
+    plt.show()
+    print('\n')
+    
+    
+    
+    
+
+def score_model_outcome(X_train, y_train, X_test, y_test, model,  **kwargs):
+    """
+    Test various models. For outcome, prognosis.
+    """
+    
+    # Train the model
+    model.fit(X_train, y_train, **kwargs)
+    
+    # Predict on the train set
+    prediction_train = model.predict(X_train)
+    
+    # Compute metrics for the train set
+    accuracy_train = accuracy_score(y_train, prediction_train)
+    
+    #False Positive Rate, True Positive Rate, Threshold
+    fpr_train, tpr_train, thresholds_train = roc_curve(y_train, prediction_train)
+    auc_train = auc(fpr_train, tpr_train)
+    
+    f1_score_train = f1_score(y_train, prediction_train)
+
+    # Predict on the test set
+    prediction_test = model.predict(X_test)
+    
+    accuracy_test = accuracy_score(y_test, prediction_test)
+
+    fpr_test, tpr_test, thresholds_test = roc_curve(y_test, prediction_test)
+    auc_test = auc(fpr_test, tpr_test)
+    
+    f1_score_test = f1_score(y_test, prediction_test)
+    
+    print("{}:".format(model.__class__.__name__))
+    # Compute and return F1 (harmonic mean of precision and recall)
+    print("On training we get an Accuracy {}, an AUC {} and F1 score {} ".format(accuracy_train, auc_train, f1_score_train ) )
+    
+    print("For test we get an Accuracy {}, an AUC {} and F1 score {}".format(accuracy_test, auc_test, f1_score_test) )
+    
+    fig, axes = plt.subplots(3, 2, figsize = (20,20))
+
+    
+    ######################## CedCed, I'm not sure, if Death or survival first :/ one should check on a simple model
+    visualgrid = [
+    ConfusionMatrix(model, ax=axes[0][0], classes=['Death', 'Survival'], cmap="YlGnBu"),
+    ClassificationReport(model, ax=axes[0][1], classes=['Death', 'Survival'],cmap="YlGn",),
+    PrecisionRecallCurve(model, ax=axes[1][0]),
+    ClassPredictionError(model, classes=['Death', 'Survival'], ax=axes[1][1]),
+    ]
+
+    for viz in visualgrid:
+        viz.fit(X_train, y_train)
+        viz.score(X_test, y_test)
+        viz.finalize()
+    
+    try:
+        roc_auc(model, X_train, y_train, X_test=X_test, y_test=y_test, classes=['Death', 'Survival'], ax=axes[2][0])
     except:
         print('Can plot ROC curve for this model')
     
