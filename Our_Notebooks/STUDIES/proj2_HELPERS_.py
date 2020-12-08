@@ -12,7 +12,8 @@ import statsmodels.api as sm
 ##### Sklearn
 ## metrics
 
-from sklearn.metrics import f1_score,accuracy_score,precision_recall_curve,plot_precision_recall_curve,roc_auc_score,roc_curve, auc
+from sklearn.metrics import f1_score,accuracy_score,precision_recall_curve,roc_auc_score,roc_curve, auc
+# plot_precision_recall_curve
 ## models
 
 from sklearn.linear_model import LinearRegression
@@ -255,7 +256,14 @@ def Imbalance(y):
     visualizer.fit(y)                        # Fit the data to the visualizer
     visualizer.show('class_balance')        # Finalize and render the figure
     plt.show()
-    
+
+def Imbalance_out(y):
+    # Instantiate the visualizer
+    visualizer = ClassBalance(labels=['Survival', 'Death'])
+
+    visualizer.fit(y)                        # Fit the data to the visualizer
+    visualizer.show('class_balance')        # Finalize and render the figure
+    plt.show()
     
 def Rad_vision(X,y):
     """ Radial distrubtions of cases around the systems, here change when unknown will be either pos or neg (just like above, also change)
@@ -266,6 +274,14 @@ def Rad_vision(X,y):
     radviz(X, y.values, classes = ['Ebola negative', 'Ebola positive'])
     plt.show()
 
+def Rad_vision_out(X,y):
+    """ Radial distrubtions of cases around the systems, here change when unknown will be either pos or neg (just like above, also change)
+    
+    """
+
+    fig, ax = plt.subplots(figsize=(20,10))
+    radviz(X, y.values, classes = ['Survival', 'Death'])
+    plt.show()
 
 
 
@@ -545,6 +561,11 @@ def PCA_vision_3D(X,y):
     visualizer.show()
     plt.show()
 
+def PCA_vision_3D_out(X,y):
+    visualizer = PCA_3D(scale=True, projection=3, classes=['Survival', 'Death'])
+    visualizer.fit_transform(X, y)
+    visualizer.show()
+    plt.show()
 
 
 """
