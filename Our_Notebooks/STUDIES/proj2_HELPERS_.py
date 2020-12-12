@@ -129,37 +129,7 @@ def handle_missing_values(X, target_values):
     X_trans.columns = X.columns
     return X_trans
 
-
-# To transform the format MM/DD/YYYY or M/DD/YYYY or MM.DD.YYYY into a single integer
-def date_transformer(date_in_str):
-    day  = ''
-    month= ''
-    year = ''
-    separator = 0
-    for i in date_in_str:
-        if i =='.' or i=='/':
-            separator +=1
-        else:
-            if separator == 0:
-                month += i
-            elif separator == 1:
-                day   += i
-            elif separator ==2:
-                year  += i
-    return int(day)*10 + int(month)*1000 + int(year)*100000
-
-
-#  Reformats the date in the desired column using date_transformer
-def transform_datclin(data_frame, target_column_name='datclin', inplace=False):
-    df = data_frame
-    if not inplace:
-        df = data_frame.copy()
-    for i, date in enumerate(df[target_column_name]):
-        nb_date = date_transformer(date)
-        df.loc[i,target_column_name] = nb_date
-    if not inplace:
-        return df
-
+ 
 
 # to extract just one subset of data:
 def extract_certain_dataset(data_frame, name_of_target_column, target_value):
@@ -170,7 +140,7 @@ def extract_certain_dataset(data_frame, name_of_target_column, target_value):
 # to separate the dataframe in subgroups depending on the values in the target column.
 def make_list_by_value(data_frame, name_of_target_column, name_of_reference_column):
     list_of_df = []
-    list_of_target_values = data_frame[name_of_target_column].value_counts().index
+    list_of_target_values = data_frame[name_of_target_column].value_counts().index.sort_values()
     for i, value in enumerate(list_of_target_values):
         list_of_df.append(extract_certain_dataset(data_frame, name_of_target_column, value).set_index(name_of_reference_column))
     return list_of_df
@@ -180,7 +150,7 @@ def make_list_by_value(data_frame, name_of_target_column, name_of_reference_colu
 # and then puts them back toghether, but horizontally intead of vertically. Aloigned around the reference column.
 def rearange_horizontally(data_frame, name_of_target_column, name_of_reference_column):
     list_of_df = make_list_by_value(data_frame, name_of_target_column, name_of_reference_column)
-    return pd.concat(list_of_df, axis=1, sort=False).reset_index()
+    return pd.concat(list_of_df, axis=1, sort=False)#.reset_index()
     
 
 # ouputs a list of sub-dataframes. One for each different value in the targeted column 
@@ -211,27 +181,33 @@ def big_reassembly(list_of_list_of_df):
     for i, sublist in enumerate(list_of_list_of_df):
         list_of_list_of_df[i] = reassemble(sublist)
     return reassemble(list_of_list_of_df)
+   
+
+def subtract_list(list1, list2):
+    list3= []
+    for i in list1:
+        if i not in list2:
+            list3.append(i)
+    return list3
 
 
-# only works for this specific dataset so many parameters are hard-coded
-# will find how many visits each patient did and assign a chronological order to them under a new column 'rank'
-def rank_visits_rigorous(data_frame):
-    df_clinic_d = transform_datclin(data_frame, 'datclin')      # correct the dates to better suit ranking
-    list_of_df = dissassemble(df_clinic_d, 'msfid')             # make subgroups for each patient
-    for i, sub_df in enumerate(list_of_df):
-        # for each patient, each day of visit, rank the hours of visit of that day
-        sub_df['rank_on_day'] = sub_df.groupby('datclin')['timclin'].rank('dense', ascending=True)
-    
-    df_clinic_m = reassemble(list_of_df)                        # reassemble the dataset
-    # combine ranking on day with general date to have exact order of visit
-    df_clinic_m['datclin'] = df_clinic_m['datclin'] + df_clinic_m['rank_on_day'] 
-    df_clinic_m.drop(columns=['rank_on_day'], inplace=True)
-    # find that order
-    df_clinic_m['rank']= df_clinic_m.groupby('msfid')['datclin'].rank('dense', ascending=True)
-    
-    return df_clinic_m
-    
-
+# just running df = transform_into_horizontal_df(data_frame) will do all the work, provided the dataset does not have more than one observation per day.
+# Will separate the dataset into smaller datasets corresponding to the values of 'time_elapsed' and then concatenate everything horizontally.
+def transform_into_horizontal_df(data_frame, 
+                                 reference_column='msfid', 
+                                 current_time_column='datclin', 
+                                 first_day_column='first_date', 
+                                 no_need_duplicate_columns=['sex', 'dt', 'time_stayed', 'outcome', 'datsym'],
+                                 columns_to_readd_at_end=['sex']):
+    rest = subtract_list(data_frame.columns, no_need_duplicate_columns)
+    df_to_rearange = data_frame[rest].copy()
+    df_to_rearange['time_elapsed'] = df_to_rearange[current_time_column] - df_to_rearange[first_day_column]
+    df_rearanged = rearange_horizontally(df_to_rearange, 'time_elapsed', reference_column)
+    df_rearanged = df_rearanged.rename(index=str, columns={'index':'msfid'})
+    df_tail = data_frame[[reference_column] + columns_to_readd_at_end].copy()
+    df_tail_shrunk = df_tail.groupby(reference_column).nth(0)
+    df_rearanged_with_end = pd.merge(df_rearanged.set_index(reference_column), df_tail_shrunk, left_index=True, right_index=True, how='inner')
+    return df_rearanged_with_end.reset_index()
 
 
 ########################################### DATA - VISUALIZATION ##############################################################
