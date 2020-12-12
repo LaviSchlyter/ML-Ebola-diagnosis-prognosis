@@ -203,6 +203,7 @@ def transform_into_horizontal_df(data_frame,
     df_to_rearange = data_frame[rest].copy()
     df_to_rearange['time_elapsed'] = df_to_rearange[current_time_column] - df_to_rearange[first_day_column]
     df_rearanged = rearange_horizontally(df_to_rearange, 'time_elapsed', reference_column)
+    df_rearanged = df_rearanged.reset_index()
     df_rearanged = df_rearanged.rename(index=str, columns={'index':'msfid'})
     df_tail = data_frame[[reference_column] + columns_to_readd_at_end].copy()
     df_tail_shrunk = df_tail.groupby(reference_column).nth(0)
