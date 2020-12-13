@@ -197,8 +197,8 @@ def transform_into_horizontal_df(data_frame,
                                  reference_column='msfid', 
                                  current_time_column='datclin', 
                                  first_day_column='first_date', 
-                                 no_need_duplicate_columns=['sex', 'dt', 'time_stayed', 'outcome', 'datsym'],
-                                 columns_to_readd_at_end=['sex', 'outcome']):
+                                 no_need_duplicate_columns=['sex', 'dt', 'time_stayed', 'outcome', 'datsym', 'age'],
+                                 columns_to_readd_at_end=['sex', 'age', 'outcome']):
     rest = subtract_list(data_frame.columns, no_need_duplicate_columns)
     df_to_rearange = data_frame[rest].copy()
     df_to_rearange['time_elapsed'] = df_to_rearange[current_time_column] - df_to_rearange[first_day_column]
