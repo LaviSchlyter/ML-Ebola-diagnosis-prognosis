@@ -236,7 +236,7 @@ def Imbalance(y):
 
 def Imbalance_out(y):
     # Instantiate the visualizer
-    visualizer = ClassBalance(labels=['Survival', 'Death'])
+    visualizer = ClassBalance(labels=[ 'Survival','Death'])
 
     visualizer.fit(y)                        # Fit the data to the visualizer
     visualizer.show('class_balance')        # Finalize and render the figure
@@ -449,6 +449,7 @@ def score_model_outcome(X_train, y_train, X_test, y_test, model,  **kwargs):
     prediction_test = model.predict(X_test)
     
     accuracy_test = accuracy_score(y_test, prediction_test)
+    
 
     fpr_test, tpr_test, thresholds_test = roc_curve(y_test, prediction_test)
     auc_test = auc(fpr_test, tpr_test)
