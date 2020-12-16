@@ -13,7 +13,7 @@ import statsmodels.api as sm
 ## metrics
 
 from sklearn.metrics import f1_score,accuracy_score,precision_recall_curve,roc_auc_score,roc_curve, auc
-# plot_precision_recall_curve
+
 ## models
 
 from sklearn.linear_model import LinearRegression
@@ -38,13 +38,21 @@ from yellowbrick.features import Rank2D
 from yellowbrick.target import ClassBalance
 from yellowbrick.features.radviz import radviz
 
-    
 ########################################### FEATURE - ENGINEERING ############################################################
 
 def delete_minus1(X): 
-    """ Basic cleaning function 
-    If over 50 % missing within a feature, remove the feature 
-    and then remove all rows with missing values
+    """ Delete columns and rows which contain unknowns (-1)
+    we first start by removing columns and then the rows
+
+    Parameters
+    ----------
+    X: matrix of features
+
+    Returns
+    -------
+    
+    - Xp : A matrix with no missing values
+    
     """
     Xp = X.copy()
     for column in Xp:
@@ -59,10 +67,26 @@ def delete_minus1(X):
     return Xp
 
 
-# Makes a column full of ones to the right, with the same name as the target column and suffix _indicator (makes copy of dataFrame)
-# If the column already exists: does nothing
 
 def make_ones_indicator_column(data_frame, name_of_column_target, inplace=False):
+    """ For each column we add an indicator column which adds a '1' for when the information 
+    is known (1 or 0) and adds a '0' for the data is unknown (-1). Same name as the target column and suffix _indicator
+    If the indicator column already exists: function does nothing.
+    
+    Parameters
+    ----------
+    data_frame: A data frame
+    
+    name_of_column_target: Column which will be given an indicator column
+    
+    inplace = State whether the cahnge must be a copy or an inplace operation (Default = False)
+
+    Returns
+    -------
+    
+    - Returns the indicator column filled with ones and zeros
+    
+    """
     if name_of_column_target + '_indicator' in data_frame.columns:
         if not inplace:
             return data_frame.copy()
@@ -75,11 +99,26 @@ def make_ones_indicator_column(data_frame, name_of_column_target, inplace=False)
             return df_temp
 
 
-        
-        
-# Finds in the indicator column the lines where the target column has target value, and puts 0 there
 
 def put_zero_in_indicator_column(data_frame, name_of_column_target, target_value, inplace=False):
+    """ Finds in the indicator column the lines where the target column has target value, and puts 0 there
+    
+
+    Parameters
+    ----------
+    data_frame: A data frame
+    
+    name_of_column_target: Column which will be given an indicator column
+    
+    target_value: value that will be change to zero each time it is encountered
+
+    inplace = State whether the cahnge must be a copy or an inplace operation (Default = False)
+    Returns
+    -------
+    
+    - A data frame where zeros will be added to the indicator column
+    
+    """
     if inplace:
         data_frame.loc[data_frame[name_of_column_target] == target_value, name_of_column_target + '_indicator'] = 0
     else :
@@ -93,6 +132,18 @@ def put_zero_in_indicator_column(data_frame, name_of_column_target, target_value
 # adds a column to the right, with name of target + _indicator, with 0 on same line as the target column has target value
 
 def make_indicator_for_bad_data(data_frame, name_of_column_target, target_value, inplace=False):
+    """ Looking at 
+
+    Parameters
+    ----------
+    X: matrix of features
+
+    Returns
+    -------
+    
+    - A plot with correlation features
+    
+    """
     if inplace:
         make_ones_indicator_column(data_frame, name_of_column_target, inplace)
         put_zero_in_indicator_column(data_frame, name_of_column_target, target_value, inplace)
@@ -107,6 +158,18 @@ def make_indicator_for_bad_data(data_frame, name_of_column_target, target_value,
 # putting several times the same column name in list to search for multiple targets in that column.
 
 def make_indicators(data_frame, list_of_column_target, list_of_target_values, inplace=False):
+    """ Looking at 
+
+    Parameters
+    ----------
+    X: matrix of features
+
+    Returns
+    -------
+    
+    - A plot with correlation features
+    
+    """
     if not inplace:
         df_temp = data_frame.copy()
     else:
@@ -122,7 +185,19 @@ def make_indicators(data_frame, list_of_column_target, list_of_target_values, in
 from sklearn.impute import SimpleImputer
 
 def handle_missing_values(X, target_values):
-    """Using KNN algorithm to predict missing values"""
+    """ Using KNN algorithm to predict missing values
+
+    Parameters
+    ----------
+    X: matrix of features
+
+    Returns
+    -------
+    
+    - A plot with correlation features
+    
+    """
+    
     imputer = SimpleImputer(missing_values= target_values)
     mod = imputer.fit(X)
     X_trans = pd.DataFrame(mod.transform(X))
@@ -133,12 +208,36 @@ def handle_missing_values(X, target_values):
 
 # to extract just one subset of data:
 def extract_certain_dataset(data_frame, name_of_target_column, target_value):
+    """ Using KNN algorithm to predict missing values
+
+    Parameters
+    ----------
+    X: matrix of features
+
+    Returns
+    -------
+    
+    - A plot with correlation features
+    
+    """
     df = data_frame[data_frame[name_of_target_column] == target_value].copy()
     return df
 
 
 # to separate the dataframe in subgroups depending on the values in the target column.
 def make_list_by_value(data_frame, name_of_target_column, name_of_reference_column):
+    """ Using KNN algorithm to predict missing values
+
+    Parameters
+    ----------
+    X: matrix of features
+
+    Returns
+    -------
+    
+    - A plot with correlation features
+    
+    """
     list_of_df = []
     list_of_target_values = data_frame[name_of_target_column].value_counts().index.sort_values()
     for i, value in enumerate(list_of_target_values):
@@ -149,6 +248,18 @@ def make_list_by_value(data_frame, name_of_target_column, name_of_reference_colu
 # first separates the original dataset into subgroups corresponding to values on the target column,
 # and then puts them back toghether, but horizontally intead of vertically. Aloigned around the reference column.
 def rearange_horizontally(data_frame, name_of_target_column, name_of_reference_column):
+    """ Using KNN algorithm to predict missing values
+
+    Parameters
+    ----------
+    X: matrix of features
+
+    Returns
+    -------
+    
+    - A plot with correlation features
+    
+    """
     list_of_df = make_list_by_value(data_frame, name_of_target_column, name_of_reference_column)
     return pd.concat(list_of_df, axis=1, sort=False)#.reset_index()
     
@@ -156,6 +267,18 @@ def rearange_horizontally(data_frame, name_of_target_column, name_of_reference_c
 # ouputs a list of sub-dataframes. One for each different value in the targeted column 
 # (slightly different from make_list_by_value because of context of use)
 def dissassemble(data_frame, name_of_column_target):
+    """ Using KNN algorithm to predict missing values
+
+    Parameters
+    ----------
+    X: matrix of features
+
+    Returns
+    -------
+    
+    - A plot with correlation features
+    
+    """
     out_list=[]
     for i, value in enumerate(data_frame[name_of_column_target].value_counts(sort=False).index):
         df = data_frame[data_frame[name_of_column_target] == value].copy()
@@ -165,6 +288,18 @@ def dissassemble(data_frame, name_of_column_target):
 
 # outputs a list of lists of sub-dataframes. (calls dissassemble twice)
 def fine_dissassembly(data_frame, name_first_column_target, name_second_column_target):
+    """ Using KNN algorithm to predict missing values
+
+    Parameters
+    ----------
+    X: matrix of features
+
+    Returns
+    -------
+    
+    - A plot with correlation features
+    
+    """
     out_list = dissassemble(data_frame, name_first_column_target)
     for i, subdf in enumerate(out_list):
         out_list[i] = dissassemble(subdf, name_second_column_target)
@@ -173,17 +308,53 @@ def fine_dissassembly(data_frame, name_first_column_target, name_second_column_t
 
 # Undoes dissassemble
 def reassemble(list_of_df):
+    """ Using KNN algorithm to predict missing values
+
+    Parameters
+    ----------
+    X: matrix of features
+
+    Returns
+    -------
+    
+    - A plot with correlation features
+    
+    """
     return pd.concat(list_of_df)
 
 
 # Undoes fine_dissassembly
 def big_reassembly(list_of_list_of_df):
+    """ Using KNN algorithm to predict missing values
+
+    Parameters
+    ----------
+    X: matrix of features
+
+    Returns
+    -------
+    
+    - A plot with correlation features
+    
+    """
     for i, sublist in enumerate(list_of_list_of_df):
         list_of_list_of_df[i] = reassemble(sublist)
     return reassemble(list_of_list_of_df)
    
 
 def subtract_list(list1, list2):
+    """ Using KNN algorithm to predict missing values
+
+    Parameters
+    ----------
+    X: matrix of features
+
+    Returns
+    -------
+    
+    - A plot with correlation features
+    
+    """
     list3= []
     for i in list1:
         if i not in list2:
@@ -199,6 +370,18 @@ def transform_into_horizontal_df(data_frame,
                                  first_day_column='first_date', 
                                  no_need_duplicate_columns=['sex', 'dt', 'time_stayed', 'outcome', 'datsym', 'age'],
                                  columns_to_readd_at_end=['sex', 'age', 'outcome']):
+    """ Using KNN algorithm to predict missing values
+
+    Parameters
+    ----------
+    X: matrix of features
+
+    Returns
+    -------
+    
+    - A plot with correlation features
+    
+    """
     rest = subtract_list(data_frame.columns, no_need_duplicate_columns)
     df_to_rearange = data_frame[rest].copy()
     df_to_rearange['time_elapsed'] = df_to_rearange[current_time_column] - df_to_rearange[first_day_column]
@@ -216,34 +399,79 @@ def transform_into_horizontal_df(data_frame,
 
 
 def Corr_vision(X):
-    """ Correlation visualization according to Pearson 
-    <
+    """ Correlation visualization according to Pearson
+
+    Parameters
+    ----------
+    X: matrix of features
+
+    Returns
+    -------
+    
+    - A plot with correlation features
+    
     """
+
 
     fig, ax = plt.subplots(figsize=(20,20))
     visualizer = Rank2D(algorithm="pearson")
     visualizer.fit_transform(X)
-    visualizer.show('corr_matrix')
+    #visualizer.show('corr_matrix') // to output png
     plt.show()
 
 def Imbalance(y):
+    """ Imabalance between the labels
+
+    Parameters
+    ----------
+    y: vector of labels
+
+    Returns
+    -------
+    
+    - A plot with the class imbalances for Ebola positive or negative
+    
+    """
     # Instantiate the visualizer
     visualizer = ClassBalance(labels=['Ebola negative', 'Ebola positive'])
 
     visualizer.fit(y)                        # Fit the data to the visualizer
-    visualizer.show('class_balance')        # Finalize and render the figure
+    #visualizer.show('class_balance')        # Finalize and render the figure
     plt.show()
 
 def Imbalance_out(y):
+    """ Imabalance between the labels
+
+    Parameters
+    ----------
+    y: vector of labels
+
+    Returns
+    -------
+    
+    - A plot with the class imbalances for the outcome
+    
+    """
     # Instantiate the visualizer
     visualizer = ClassBalance(labels=[ 'Survival','Death'])
 
     visualizer.fit(y)                        # Fit the data to the visualizer
-    visualizer.show('class_balance')        # Finalize and render the figure
+    #visualizer.show('class_balance')        # Finalize and render the figure
     plt.show()
     
 def Rad_vision(X,y):
-    """ Radial distrubtions of cases around the systems, here change when unknown will be either pos or neg (just like above, also change)
+    """ Radial distrubtions of cases around the systems, a method to detect separability between classes
+
+    Parameters
+    ----------
+    X: matrix of features
+    
+    y: vector of labels, for diagnosis
+
+    Returns
+    -------
+    
+    - A radial plot, with the labels and the features at the circonference
     
     """
 
@@ -252,113 +480,55 @@ def Rad_vision(X,y):
     plt.show()
 
 def Rad_vision_out(X,y):
-    """ Radial distrubtions of cases around the systems, here change when unknown will be either pos or neg (just like above, also change)
+    """ Radial distrubtions of cases around the systems, a method to detect separability between classes
+
+    Parameters
+    ----------
+    X: matrix of features
+    
+    y: vector of labels, for prognosis
+
+    Returns
+    -------
+    
+    - A radial plot, with the labels and the features at the circonference
     
     """
-
     fig, ax = plt.subplots(figsize=(20,10))
     radviz(X, y.values, classes = ['Survival', 'Death'])
     plt.show()
-
-
-
-
-def Log_reg(X,y):
-    """ Logistic regression, using the p_values to find important features 
-    
-    """
-    
-    #no of features 
-    nof_list=np.arange(1, len(X.columns)+1)   
-
-    highest_score=0
-    #Variable to store the optimum features
-    nof=0           
-    score_list =[]
-    for n in range(len(nof_list)):
-        X_train, X_test, y_train, y_test = train_test_split(X,y, test_size = 0.2, random_state = 123)
-        model = LogisticRegression(max_iter=100)
-        rfe = RFE(model,n_features_to_select=nof_list[n])
-        X_train_rfe = rfe.fit_transform(X_train,y_train)
-        X_test_rfe = rfe.transform(X_test)
-        model.fit(X_train_rfe,y_train)
-        score = model.roc_auc_score(X_test_rfe,y_test) # AUC
-        score_list.append(score)
-        if(score>highest_score):
-            highest_score = score
-            nof = nof_list[n]
-    print("Optimum number of features: %d" %nof)
-    print("Score with %d features: %f" % (nof, highest_score))
-    cols = np.array(X.columns)
-    print(cols[rfe.support_])
-    
-
-    print("Feature importance for LogisticRegression")
-
-    model = LogisticRegression()
-
-    #Initializing RFE model
-    rfe = RFE(model, n_features_to_select=nof)   
-
-    #Transforming data using RFE
-    X_rfe = rfe.fit_transform(X,y)  
-
-    #Fitting the data to model
-    model.fit(X_rfe,y) 
-
-    print(cols[rfe.support_])
-    
-    
-    
-    
-
-def backward_elimation(X_train, y_train, model_str):
-    """Backward Elimination for chosen model, call with backward_elimation(X, y, "least-squares"), selects features """
-    cols = list(X.columns)
-    pmax = 1
-    while (len(cols)>0):
-        p= []
-        X_1 = X[cols]
-        #X_1 = sm.add_constant(X_1) We already added a constant for the model 
-        if model_str == "least-squares":
-            model = sm.OLS(y,X_1).fit()
-        elif model_str == "logistic regression":
-            model = sm.Logit(y,X_1).fit()
-        else: raise NameError('Backward elimination not implemented for this model')
-        p = pd.Series(model.pvalues.values,index = cols)    #[1:]  
-        pmax = max(p)
-        feature_with_p_max = p.idxmax()
-        if(pmax>0.05):
-            cols.remove(feature_with_p_max)
-        else:
-            break
-    selected_features_BE = cols
-    print(selected_features_BE)
-    
-############ Not sure  if X is train or not .... (please check Ridha previousstudy file on git, I don't have it anymore)   
-def Lasso(X,y): 
-    """ Importance of features according to Lasso method 
-    """
-    reg = LassoCV()
-    reg.fit(X, y)
-
-    print("Best alpha using built-in LassoCV: %f" % reg.alpha_)
-    print("Best score using built-in LassoCV: %f" %reg.score(X,y))
-    coef = pd.Series(reg.coef_, index = X.columns)
-    print("Lasso picked " + str(sum(coef != 0)) + " variables and eliminated the other " +  str(sum(coef == 0)) + " variables")
-   
-    imp_coef = coef.sort_values()
-    plt.rcParams['figure.figsize'] = (8.0, 10.0)
-    imp_coef.plot(kind = "barh")
-    plt.title("Feature importance using Lasso Model")
-    plt.show()
-
     
 
 def score_model(X_train, y_train, X_test, y_test, model,  **kwargs):
+    """ A function that returns the different metrics of accuracy, confusion matrix and other model reports depending on the type of model that is asked.
+    
+    This function is for diagnosis, please use score_model_outcome for prognosis
+
+    Parameters
+    ----------
+    X_train: matrix of training features
+    
+    y_train: vector of training labels
+    
+    X_test: matrix of test features
+    
+    y_test: vector of test labels
+
+    Returns
+    -------
+    
+    - Accuracy, F1 score and ROC_AUC for the train and test set
+    
+    - Confusion matrix
+    
+    - ClassificationReport
+    
+    - PrecisionRecallCurve
+    
+    - ClassPredictionError
+    
     """
-    Test various models. For ebola prediction
-    """
+
     
     # Train the model
     model.fit(X_train, y_train, **kwargs)
@@ -426,8 +596,33 @@ def score_model(X_train, y_train, X_test, y_test, model,  **kwargs):
     
 
 def score_model_outcome(X_train, y_train, X_test, y_test, model,  **kwargs):
-    """
-    Test various models. For outcome, prognosis.
+    """ A function that returns the different metrics of accuracy, confusion matrix and other model reports depending on the type of model that is asked.
+    
+    This function is for prognosis
+
+    Parameters
+    ----------
+    X_train: matrix of training features
+    
+    y_train: vector of training labels
+    
+    X_test: matrix of test features
+    
+    y_test: vector of test labels
+
+    Returns
+    -------
+    
+    - Accuracy, F1 score and ROC_AUC for the train and test set
+    
+    - Confusion matrix
+    
+    - ClassificationReport
+    
+    - PrecisionRecallCurve
+    
+    - ClassPredictionError
+    
     """
     
     # Train the model
@@ -464,8 +659,7 @@ def score_model_outcome(X_train, y_train, X_test, y_test, model,  **kwargs):
     
     fig, axes = plt.subplots(3, 2, figsize = (20,20))
 
-    
-    ######################## CedCed, I'm not sure, if Death or survival first :/ one should check on a simple model
+
     visualgrid = [
     ConfusionMatrix(model, ax=axes[0][0], classes=['Death', 'Survival'], cmap="YlGnBu"),
     ClassificationReport(model, ax=axes[0][1], classes=['Death', 'Survival'],cmap="YlGn",),
@@ -493,93 +687,23 @@ def score_model_outcome(X_train, y_train, X_test, y_test, model,  **kwargs):
         
     plt.show()
     print('\n')
-######################################################### MODELS ######################################################################################
-
-def PCA_(k, X, y):
-
-    
-    pca = PCA(n_components = k)
-    X_new = pca.fit_transform(X)
-    y_new = y.copy()
-    
-    coeff = np.transpose(pca.components_[0:2, :])
-    labels = None
-    xs = X_new[:,0]
-    ys = X_new[:,1]
-    n = coeff.shape[0]
-    cdict = {0.0: 'gray', 1: 'black'}
-    ldict = {0.0: 'Not a case', 1: 'Confirmed'}
-    fig, ax = plt.subplots()
-    for g in np.unique(y_new):
-        ix = np.where(y_new == g)
-        ax.scatter(xs[ix], ys[ix], c = cdict[g], label = ldict[g])
-    for i in range(n):
-        factor_ = 2.8
-        plt.arrow(0, 0, coeff[i,0]*factor_, coeff[i,1]*factor_,color = 'r',alpha = 0.5)
-        if labels is None and np.linalg.norm([coeff[i,0], coeff[i,1]])>0.3:
-            plt.text(coeff[i,0]* 3, coeff[i,1] * 3, str(X.columns[i]), color = 'red', ha = 'center', va = 'center', fontsize=12, weight='bold')
-    
-    ax.legend()
-
-    plt.xlabel("PC{}".format(1))
-    plt.ylabel("PC{}".format(2))
-    plt.grid()
-    plt.show()
-    
-    #Call the function. Use only the 2 PCs.
-    #myplot(X_new, y_new, np.transpose(pca.components_[0:2, :]))
-    
-    
 
 
 
 def PCA_vision_3D(X,y):
     visualizer = PCA_3D(scale=True, projection=3, classes=['Ebola negative', 'Ebola positive'])
     visualizer.fit_transform(X, y)
-    visualizer.show()
+    #visualizer.show()
     plt.show()
 
 def PCA_vision_3D_out(X,y):
     visualizer = PCA_3D(scale=True, projection=3, classes=['Survival', 'Death'])
     visualizer.fit_transform(X, y)
-    visualizer.show()
+    #visualizer.show()
     plt.show()
 
 
-"""
 
-
-DONT USE THESE !!!! TOO MUCH OF A BLACK BOX, and this one is wrong sine we don't update the parameters, recall to do a cross validation with a range estimated by the visualizer (ridha notebook) and the update the parameters found
-"""
-
-def Decision_trees(X_train,y_train,max_depth,min_samples_split):
-    clfq = tree.DecisionTreeClassifier(max_depth=max_depth, min_samples_split = min_samples_split)
-    clfq = clfq.fit(X_train, y_train)
-
-    y_pred = clfq.predict_proba(X_test)
-    dot_data_1q = tree.export_graphviz(clfq, 
-                                out_file=None, 
-                                feature_names=X.columns,
-                                rounded=True)
-    graph_1q = graphviz.Source(dot_data_1q)
-    graph_1q.render("Decision_tree_1_q")
-
-    accuracy_all(y_test, y_pred)
-
-    
-    tree.plot_tree(clfq)
-    fig = plt.gcf()
-    plt.show()
-
-
-    
-
-    
-"""
-
-
-DONT USE THESE !!!! TOO MUCH OF A BLACK BOX, and this one is wrong sine we don't update the parameters, recall to do a cross validation with a range estimated by the visualizer (ridha notebook) and the update the parameters found
-"""
     
 def Random_forest(X_train,y_train,n_est, index_tree,max_depth,sample_split):
     """Perform random forest.
@@ -622,59 +746,8 @@ def Random_forest(X_train,y_train,n_est, index_tree,max_depth,sample_split):
     impurity=False,
     proportion=True)
     graph_forest = graphviz.Source(dot_data_forest)
-    graph_forest.render("Decision_forest")
-
+    #graph_forest.render("Decision_forest") // output 
 
 
     
-def accuracy_all(y_test, y_pred):
-    #print("Accuracy: ", accuracy_score(y_test, y_pred))
-    print("Macro F1 score(test): ",f1_score(y_test, y_pred, average='macro'))
-    print("Micro F1 score(test): ",f1_score(y_test, y_pred, average='micro'))
-    print("Accuracy under curve(test): ", roc_auc_score(y_test, y_pred))
-    # 
-def elbow_plot(X_train):
-
-    Sum_of_squared_distances = []
-    K = range(1,15)
-    for k in K:
-        KMeans_clf = KMeans(n_clusters=k).fit(X_train)
-        Sum_of_squared_distances.append(KMeans_clf.inertia_)
-    
-    plt.plot(K, Sum_of_squared_distances, 'bx-')
-    plt.xlabel('k')
-    plt.ylabel('Sum_of_squared_distances')
-    plt.title('Elbow Method For Optimal k')
-    plt.show()
-    
-
-    
-"""
-
-
-DONT USE THESE !!!! TOO MUCH OF A BLACK BOX, and this one is wrong sine we don't update the parameters (please use Ridha as reference)
-"""
-
-def SVM_(X_train,y_train, param_grid = {'C': [0.1,1], 'gamma': [1,0.1],'kernel': ['sigmoid', 'poly']}):
-    """
-    SVM model
-    
-    param_grid : by default, but you may override with more values and with sigmoid as well, beware, this is time consuming
-    
-    
-    """
-
-
-    #param_grid = {'C': [0.1,1, 10, 100], 'gamma': [1,0.1,0.01,0.001],'kernel': ['rbf', 'poly', 'sigmoid']} (TOO MUCH TIME)
-    grid = GridSearchCV(svm.SVC(),param_grid,refit=True,verbose=1)
-    grid.fit(X_train,y_train)
-
-    print(grid.best_estimator_)
-
-    grid_pred = grid.predict_proba(X_test)
-    accuracy_all(y_test,grid_pred)
-
-    
-
-    
-    
+     
